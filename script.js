@@ -9,10 +9,6 @@ class ExplorerGame {
         this.hintUsed = false;
         this.foundTargets = new Set(); // Para rastrear quais alvos foram encontrados
         
-        // ============================================
-        // ÁREA DE CONFIGURAÇÃO - MODIFIQUE AQUI
-        // ============================================
-        
         // Primeira área clicável (teste)
         this.targetArea1 = {
             x: 68.5,      // porcentagem da largura
@@ -65,7 +61,7 @@ class ExplorerGame {
             width: 2.25,   
             height: 3, 
             id: 'target6',
-            name: 'Borboleta'
+            name: 'Borboleta Azul-Ceda'
         };
 
         this.targetArea7 = {
@@ -74,16 +70,105 @@ class ExplorerGame {
             width: 2,
             height: 3.9,
             id: 'target7',
+            name: 'Bicho Folha'
+        };
+
+        this.targetArea8 = {
+            x: 42.4,      
+            y: 83.2,      
+            width: 2,   
+            height: 3.3, 
+            id: 'target8',
+            name: 'Aranha Marrom'
+        };
+
+        this.targetArea9 = {
+            x: 41.3,      
+            y: 76.9,      
+            width: 1,   
+            height: 1, 
+            id: 'target9',
+            name: 'Aranha Caranguejeira'
+        };
+
+        this.targetArea10 = {
+            x: 45.8,      
+            y: 82.5,      
+            width: 4.5,   
+            height: 3.5, 
+            id: 'target10',
+            name: 'Formiga-de-Fogo'
+        };
+
+        this.targetArea11 = {
+            x: 46,      
+            y: 10,      
+            width: 6,   
+            height: 7.5, 
+            id: 'target11',
+            name: 'Formiga-Cortadeira'
+        };
+
+        this.targetArea12 = {
+            x: 2.2,      
+            y: 36.5,      
+            width: 2.7,   
+            height: 6, 
+            id: 'target12',
+            name: 'Mariposa'
+        }
+
+        this.targetArea13 = {
+            x: 59.8,      
+            y: 9.05,      
+            width: 1,   
+            height: 1.4, 
+            id: 'target13',
             name: 'Besouro'
+        };
+
+        this.targetArea14 = {
+            x: 31,      
+            y: 40,      
+            width: 2,   
+            height: 3, 
+            id: 'target14',  
+            name: 'Bicho-Pau'
+        };
+
+        this.targetArea15 = {
+            x: 81,      
+            y: 74.19,      
+            width: 1.5,   
+            height: 2.5, 
+            id: 'target15',  
+            name: 'Borboleta Azul-Morfa'
+        };
+
+        this.targetArea16 = {  
+            x: 81,      
+            y: 36.9,      
+            width: 2,   
+            height: 2, 
+            id: 'target16',  
+            name: 'Besouro-Hercules'
+        };
+
+        this.targetArea17 = {
+            x: 79.6,      
+            y: 81,      
+            width: 2.5,   
+            height: 7.1, 
+            id: 'target17',  
+            name: 'Borboleta Linda'
         };
 
         // Lista de todas as áreas
         this.allTargets = [this.targetArea1, this.targetArea2,this.targetArea3,this.targetArea4,
-                           this.targetArea5, this.targetArea6, this.targetArea7];
-        
-        // ============================================
-        // FIM DA ÁREA DE CONFIGURAÇÃO
-        // ============================================
+                           this.targetArea5, this.targetArea6, this.targetArea7, this.targetArea8, 
+                           this.targetArea9, this.targetArea10, this.targetArea11, this.targetArea12,
+                           this.targetArea13, this.targetArea14, this.targetArea15, this.targetArea16,
+                           this.targetArea17];
 
         this.initializeGame();
     }
@@ -119,87 +204,6 @@ class ExplorerGame {
         };
         
         img.src = imagePath;
-    }
-
-    createPlaceholderImage() {
-        const container = document.getElementById('gameContainer');
-        const loading = document.getElementById('loading');
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = 1200;
-        canvas.height = 800;
-        canvas.className = 'game-image';
-        canvas.id = 'gameImage';
-        
-        const ctx = canvas.getContext('2d');
-        
-        // Criar gradiente de fundo
-        const gradient = ctx.createLinearGradient(0, 0, 1200, 800);
-        gradient.addColorStop(0, '#2d5a27');
-        gradient.addColorStop(0.5, '#346831');
-        gradient.addColorStop(1, '#4b784e');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 1200, 800);
-        
-        // Árvores de fundo
-        for (let i = 0; i < 20; i++) {
-            const x = Math.random() * 1200;
-            const y = Math.random() * 400 + 200;
-            const size = Math.random() * 50 + 30;
-            
-            ctx.fillStyle = '#1a3d1a';
-            ctx.fillRect(x, y, size * 0.2, size);
-            ctx.fillStyle = '#2d5a27';
-            ctx.beginPath();
-            ctx.arc(x + size * 0.1, y, size * 0.6, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // Desenhar primeiro explorador
-        this.drawExplorer(ctx, 
-            (this.targetArea1.x + this.targetArea1.width/2) * 12, // converter % para pixels
-            (this.targetArea1.y + this.targetArea1.height/2) * 8
-        );
-        
-        // Desenhar segundo explorador
-        this.drawExplorer(ctx, 
-            (this.targetArea2.x + this.targetArea2.width/2) * 12, // converter % para pixels
-            (this.targetArea2.y + this.targetArea2.height/2) * 8,
-            '#FF6B6B' // cor diferente para distinguir
-        );
-        
-        // Adicionar texto de instrução
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Encontre os animais na floresta!', 600, 130);
-        
-        container.innerHTML = '';
-        container.appendChild(canvas);
-        this.createAllTargetAreas();
-        loading.style.display = 'none';
-    }
-
-    // Função auxiliar para desenhar um explorador
-    drawExplorer(ctx, x, y, shirtColor = '#8B4513') {
-        // Corpo
-        ctx.fillStyle = shirtColor;
-        ctx.fillRect(x - 10, y - 15, 20, 30);
-        
-        // Cabeça
-        ctx.fillStyle = '#F4C2A1';
-        ctx.beginPath();
-        ctx.arc(x, y - 20, 12, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Chapéu
-        ctx.fillStyle = '#654321';
-        ctx.fillRect(x - 15, y - 32, 30, 8);
-        ctx.fillRect(x - 12, y - 40, 24, 8);
-        
-        // Mochila
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(x + 8, y - 10, 8, 15);
     }
 
     // Criar todas as áreas alvo
@@ -465,6 +469,12 @@ class ExplorerGame {
         document.getElementById('score').textContent = this.score;
         document.getElementById('attempts').textContent = this.attempts;
     }
+
+    //Botão "Saiba Mais", pode ser usado para mostrar informações sobre os animais qu estão na imagem.
+    knowMore() {
+        //...
+    }
+
 }
 
 // Inicializar o jogo quando a página carregar
