@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searching for exotic animals</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-header">
+        <h1 class="game-title">🔍 ONDE ESTÃO OS INSETOS ?</h1>
+        <div class="game-stats">
+            <div class="stat-item">
+                <div class="stat-label">Tempo</div>
+                <div class="stat-value" id="timer">00:00</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Pontos</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Tentativas</div>
+                <div class="stat-value" id="attempts">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container" id="gameContainer">
+        <div class="loading" id="loading">Carregando jogo...</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="startBtn">Iniciar Jogo</button>
+        <button class="btn btn-secondary" id="hintBtn" disabled>💡 Dica</button>
+        <button class="btn btn-primary" id="resetBtn">🔄 Reiniciar</button>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>🎉 Parabéns!</h2>
+            <p>Você encontrou todos os animais!</p>
+            <div class="final-stats" id="finalStats"></div>
+            <button class="btn btn-primary" onclick="resetGame()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
