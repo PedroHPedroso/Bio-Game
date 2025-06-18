@@ -470,20 +470,28 @@ class ExplorerGame {
         document.getElementById('attempts').textContent = this.attempts;
     }
 
-    //Botão "Saiba Mais", pode ser usado para mostrar informações sobre os animais qu estão na imagem.
+    //Botão "Saiba Mais", pode ser usado para mostrar informações sobre os animais que estão na imagem.
     knowMore() {
-        //...
+        document.getElementById('animalInfoPopup').style.display = 'flex';
+    }
+}
+
+    // Inicializar o jogo quando a página carregar
+    let game;
+    window.addEventListener('DOMContentLoaded', () => {
+        game = new ExplorerGame();
+    });
+
+    // Função global para fechar o popup
+    window.closePopup = function() {
+        document.getElementById('animalInfoPopup').style.display = 'none';
     }
 
-}
+    // Função global para reiniciar
+    function resetGame() {
+        game.resetGame();
+    }
 
-// Inicializar o jogo quando a página carregar
-let game;
-window.addEventListener('DOMContentLoaded', () => {
-    game = new ExplorerGame();
-});
-
-// Função global para reiniciar
-function resetGame() {
-    game.resetGame();
-}
+    function knowMore() {
+    game.knowMore();
+    }
