@@ -28,6 +28,25 @@
     <div class="game-container" id="gameContainer">
         <div class="loading" id="loading">Carregando jogo...</div>
     </div>
+    <!-- Registro obrigatório centralizado como pop-up -->
+    <div class="register-overlay">
+        <div class="register">
+            <h1>Cadastro</h1>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="name">Nome:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Idade:</label>
+                <input type="number" id="age" name="age" required>
+            </div>
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+    </div>
+    <!-- Registro obrigatório centralizado como pop-up -->
 
     <div class="controls">
         <button class="btn btn-primary" id="startBtn">Iniciar Jogo</button>

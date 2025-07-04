@@ -341,3 +341,89 @@ body {
     margin-top: 0;
     color: #2c5f2d;
 }
+
+.register-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 4000;
+}
+
+.register {
+    padding: 30px;
+    max-width: 300px;
+    background-color: #f0f0f0;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    width: 90%;
+}
+
+.register h1 {
+    text-align: center;
+    color: #2c5f2d;
+    margin-bottom: 20px;
+    font-size: 30px;
+}
+
+.register form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.register label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.register input, .register select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.register button {
+    padding: 12px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 100%;
+}
+
+.register button:hover {
+    background: #45a049;
+}
+
+.register button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.register .error {
+    color: red;
+    font-size: 14px;
+    margin-top: -10px;
+}
+
+.register .success {
+    color: green;
+    font-size: 14px;
+    margin-top: -10px;
+}
+

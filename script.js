@@ -1,3 +1,11 @@
+/*
+-A pontuação deve ser obtida do jogo para registro no CSV, mas esta pegando do campo Score diretamente da ExplorerGame.
+ Isso deve ser corrigido para pegar a pontuação atual do jogo.
+-NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR A DICA.
+-ALTERAR TEMPO DE EXPOSIÇÃO DOS EFEITOS VISUAIS
+-TALVEZ IMPLEMENTAR CAMPO ESCOLAS PARA PREENCHER NO FORMULÁRIO DE REGISTRO.
+*/
+
 class ExplorerGame {
     constructor() {
         this.gameStarted = false;
@@ -344,6 +352,7 @@ class ExplorerGame {
         indicator.style.top = (target.y - 5) + '%';
         indicator.style.transform = 'translateX(-50%)';
         
+        //DIMINUIR TEMPO DE EXPOSIÇÃO
         container.appendChild(indicator);
         setTimeout(() => indicator.remove(), 3000);
         
@@ -367,10 +376,12 @@ class ExplorerGame {
         miss.style.top = ((y - rect.top) / rect.height * 100) + '%';
         miss.style.transform = 'translate(-50%, -100%)';
         
+        //TALVEZ DIMINUIR O TEMPO DE EXPOSIÇÃO
         container.appendChild(miss);
         setTimeout(() => miss.remove(), 2000);
     }
 
+    //NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR.
     showHint() {
         if (this.hintUsed || !this.gameStarted || this.gameEnded) return;
         
@@ -394,7 +405,7 @@ class ExplorerGame {
             }
         });
         
-        this.showMessage('💡 Dê Zoom!', 4000);
+        this.showMessage('💡 Olha para as áreas circuladas em amarelo!', 4000);
     }
 
     showMessage(text, duration) {
@@ -461,8 +472,12 @@ class ExplorerGame {
                 targetElement.style.backgroundColor = '';
             }
         });
-        
         this.updateDisplay();
+
+        document.getElementById('registrationForm').reset();
+        document.querySelector('.register-overlay').style.display = 'flex';
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('hintBtn').disabled = true;
     }
 
     updateDisplay() {
@@ -495,3 +510,32 @@ class ExplorerGame {
     function knowMore() {
     game.knowMore();
     }
+
+    const { ipcRenderer } = require('electron');
+
+    document.getElementById('registrationForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    // Obtém os valores dos campos do formulário, mas esta errado a pontuacao.
+    // A pontuação deve ser obtida do jogo, mas esta pegando do campo Score diretamente da ExplorerGame.
+    // Isso deve ser corrigido para pegar a pontuação atual do jogo.
+    const nome = document.getElementById('name').value.trim();
+    const idade = parseInt(document.getElementById('age').value.trim(), 10);
+    const pontuacao = game?.score ?? 0; // Obtém a pontuação atual do jogo, se disponível
+
+    if (!nome || isNaN(idade)) {
+        alert('Preencha todos os campos corretamente!');
+        return;
+    }
+
+    ipcRenderer.send('salvar-registro', {
+        nome,
+        idade,
+        pontuacao
+    });
+
+    // Oculta o formulário e libera o botão
+    document.querySelector('.register-overlay').style.display = 'none';
+    document.getElementById('startBtn').disabled = false;
+    });
+
