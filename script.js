@@ -1,9 +1,5 @@
 /*
--A pontuação deve ser obtida do jogo para registro no CSV, mas esta pegando do campo Score diretamente da ExplorerGame.
- Isso deve ser corrigido para pegar a pontuação atual do jogo.
 -NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR A DICA.
--ALTERAR TEMPO DE EXPOSIÇÃO DOS EFEITOS VISUAIS
--TALVEZ IMPLEMENTAR CAMPO ESCOLAS PARA PREENCHER NO FORMULÁRIO DE REGISTRO.
 */
 
 class ExplorerGame {
@@ -329,17 +325,30 @@ class ExplorerGame {
         this.gameEnded = true;
         this.gameStarted = false;
         clearInterval(this.timerInterval);
-        
-        // Bônus por poucos tentativas
+
         if (this.attempts <= this.allTargets.length) this.score += 300; // Encontrou todos de primeira
         else if (this.attempts <= this.allTargets.length + 2) this.score += 150;
-        
-        // Penalidade por usar dica
-        if (this.hintUsed) this.score -= 150;
-        
-        this.updateDisplay();
+
+        if (this.hintUsed == true) this.score -= 150;
+
+        // Enviar os dados de registro após o jogo ser finalizado
+        const nome = document.getElementById('name').value.trim();
+        const idade = parseInt(document.getElementById('age').value.trim(), 10);
+        const escola = document.getElementById('school').value.trim();
+        const etapa = document.getElementById('schoolStage').value.trim();
+        const pontuacao = this.score; // Pontuação final do jogo
+
+        ipcRenderer.send('salvar-registro', {
+            nome,
+            idade,
+            escola,
+            etapa,
+            pontuacao
+        });
+
         this.showGameOver();
     }
+
 
     showTargetFoundEffect(target) {
         const container = document.getElementById('gameContainer');
@@ -476,6 +485,8 @@ class ExplorerGame {
 
         document.getElementById('registrationForm').reset();
         document.querySelector('.register-overlay').style.display = 'flex';
+        document.getElementById('school').value = '';
+        document.getElementById('schoolStage').value = '';
         document.getElementById('startBtn').disabled = false;
         document.getElementById('hintBtn').disabled = true;
     }
@@ -495,6 +506,18 @@ class ExplorerGame {
     let game;
     window.addEventListener('DOMContentLoaded', () => {
         game = new ExplorerGame();
+
+        fetch('DicSchool.json')
+        .then(response => response.json())
+        .then(data => {
+            const schoolList = document.getElementById('schoolList');
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.nome;  // Nome da escola
+                schoolList.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar as escolas:', error));
     });
 
     // Função global para fechar o popup
@@ -516,23 +539,15 @@ class ExplorerGame {
     document.getElementById('registrationForm').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    // Obtém os valores dos campos do formulário, mas esta errado a pontuacao.
-    // A pontuação deve ser obtida do jogo, mas esta pegando do campo Score diretamente da ExplorerGame.
-    // Isso deve ser corrigido para pegar a pontuação atual do jogo.
     const nome = document.getElementById('name').value.trim();
     const idade = parseInt(document.getElementById('age').value.trim(), 10);
-    const pontuacao = game?.score ?? 0; // Obtém a pontuação atual do jogo, se disponível
+    const escola = document.getElementById('school').value.trim();
+    const etapa = document.getElementById('schoolStage').value.trim();
 
     if (!nome || isNaN(idade)) {
         alert('Preencha todos os campos corretamente!');
         return;
     }
-
-    ipcRenderer.send('salvar-registro', {
-        nome,
-        idade,
-        pontuacao
-    });
 
     // Oculta o formulário e libera o botão
     document.querySelector('.register-overlay').style.display = 'none';

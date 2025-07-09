@@ -42,6 +42,23 @@
                 <label for="age">Idade:</label>
                 <input type="number" id="age" name="age" required>
             </div>
+
+            <div class="form-group">
+                <label for="school">Escola:</label>
+                <input type="text" id="school" name="school" list="schoolList" required>
+                <datalist id="schoolList"></datalist>
+            </div>
+
+            <div class="form-group">
+                <label for="schoolStage">Etapa Escolar:</label>
+                <select id="schoolStage" name="schoolStage" required>
+                    <option value="Ensino Infantil">Ensino Infantil</option>
+                    <option value="Ensino Fundamental">Ensino Fundamental</option>
+                    <option value="Ensino Médio">Ensino Médio</option>
+                    <option value="Ensino Especial">Ensino Especial</option>
+                </select>
+            </div>
+
             <button type="submit">Registrar</button>
         </form>
     </div>
