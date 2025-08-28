@@ -14,7 +14,9 @@ class ExplorerGame {
         this.hintUsed = false;
         this.foundTargets = new Set(); // Para rastrear quais alvos foram encontrados
         this.correctAttempts = 0; 
-        this.wrongAttempts = 0; 
+        this.wrongAttempts = 0;
+        this.lastFindTimestamp = null;
+        this.timePenaltyInterval = null; 
 
         // Configurações do Leaderboard
         this.leaderboardKey = 'insetos_leaderboard_v1';
@@ -298,6 +300,7 @@ class ExplorerGame {
         this.foundTargets.clear();
         this.correctAttempts = 0;
         this.wrongAttempts = 0;
+        this.lastFindTimestamp = null;
         
         document.getElementById('startBtn').disabled = true;
         const hintBtn = document.getElementById('hintBtn');
@@ -305,9 +308,16 @@ class ExplorerGame {
         hintBtn.textContent = `Dica ${this.hintCount}/3`;
         
         this.startTimer();
+
+        if(this.timePenaltyInterval) clearInterval(this.timePenaltyInterval);
+        this.timePenaltyInterval = setInterval(() => {
+            if (!this.gameStarted || this.gameEnded) return;
+            this.score = Math.max(0, this.score - 500);
+            this.updateDisplay();
+            this.checkDefeat();
+        }, 5000);
+
         this.updateDisplay();
-        
-        // Mostrar instruções
         this.showMessage('Encontre os animais no Jardim! 🔍', 3000);
     }
 
@@ -321,12 +331,6 @@ class ExplorerGame {
             
             document.getElementById('timer').textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            // Diminuir pontuação com o tempo
-            if (elapsed > 0) {
-                this.score = Math.max(100, 1000 - Math.floor(elapsed / 1000) * 5);
-                this.updateDisplay();
-            }
         }, 100);
     }
 
@@ -344,20 +348,32 @@ class ExplorerGame {
         this.attempts++;
         this.correctAttempts++;
         this.foundTargets.add(target.id);
-        
+
+        // ✅ Pontuação: +1000 por animal encontrado
+        this.score += 1000;
+
+        const now = Date.now();
+        if (this.lastFindTimestamp && (now - this.lastFindTimestamp) < 5000) {
+            this.score += 100;
+        }
+        this.lastFindTimestamp = now;
+
         // Mostrar efeito de sucesso para este alvo específico
         this.showTargetFoundEffect(target);
-        
+
         // Verificar se todos os alvos foram encontrados
         if (this.foundTargets.size >= this.allTargets.length) {
             this.gameWon();
-        } else {
-            // Bônus por encontrar um alvo
-            this.score += 100;
+        } 
+        else {
             this.updateDisplay();
-            this.showMessage(`✅ ${target.name} encontrad${target.name.includes('Animal') ? 'a' : 'o'}! ${this.allTargets.length - this.foundTargets.size} restante(s).`, 2500);
+            this.showMessage(
+                `✅ ${target.name} encontrad${target.name.includes('Animal') ? 'a' : 'o'}! ${this.allTargets.length - this.foundTargets.size} restante(s).`,
+                2500
+            );
         }
     }
+
 
     handleMissClick(e) {
         if (!this.gameStarted || this.gameEnded) return;
@@ -368,8 +384,10 @@ class ExplorerGame {
         
         this.attempts++;
         this.wrongAttempts++;
-        this.score = Math.max(50, this.score - 25);
+        this.score = Math.max(0, this.score - 400);
+
         this.updateDisplay();
+        this.checkDefeat();
         
         // Efeito visual de erro
         this.showMissEffect(e.clientX, e.clientY);
@@ -380,17 +398,7 @@ class ExplorerGame {
         this.gameStarted = false;
         clearInterval(this.timerInterval);
 
-        if (this.attempts <= this.allTargets.length) this.score += 300; // Encontrou todos de primeira
-        else if (this.attempts <= this.allTargets.length + 2) this.score += 150;
-
-        if (this.hintUsed == true) this.score -= 150;
-
-        // Enviar os dados de registro após o jogo ser finalizado
-        const nome = document.getElementById('name').value.trim();
-        const idade = parseInt(document.getElementById('age').value.trim(), 10);
-        const escola = document.getElementById('school').value.trim();
-        const etapa = document.getElementById('schoolStage').value.trim();
-        const pontuacao = this.score; // Pontuação final do jogo
+        if (this.timePenaltyInterval) clearInterval(this.timePenaltyInterval);
 
         // Tempo total em mm:ss
         const elapsed = Date.now() - this.startTime;
@@ -398,6 +406,24 @@ class ExplorerGame {
         const seconds = Math.floor((elapsed % 60000) / 1000);
         const tempoTotal = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         const tempoSegundos = Math.floor(elapsed / 1000);
+
+        if(tempoSegundos < 60) {
+            this.score += 500;
+        }
+
+        if(this.hintCount === 3){
+            this.score = Math.max(0, this.score - 2500);
+        }
+        else if (this.hintCount > 0){
+            this.score = Math.max(0, this.score - (500 * this.hintCount));
+        }
+
+        // Enviar os dados de registro após o jogo ser finalizado
+        const nome = document.getElementById('name').value.trim();
+        const idade = parseInt(document.getElementById('age').value.trim(), 10);
+        const escola = document.getElementById('school').value.trim();
+        const etapa = document.getElementById('schoolStage').value.trim();
+        const pontuacao = this.score; // Pontuação final do jogo
 
         ipcRenderer.send('salvar-registro', {
             nome,
@@ -439,7 +465,7 @@ class ExplorerGame {
         
         //DIMINUIR TEMPO DE EXPOSIÇÃO
         container.appendChild(indicator);
-        setTimeout(() => indicator.remove(), 2000);
+        setTimeout(() => indicator.remove(), 1500);
         
         // Marcar visualmente o alvo como encontrado
         const targetElement = document.getElementById(target.id);
@@ -463,7 +489,7 @@ class ExplorerGame {
         
         //TALVEZ DIMINUIR O TEMPO DE EXPOSIÇÃO
         container.appendChild(miss);
-        setTimeout(() => miss.remove(), 2000);
+        setTimeout(() => miss.remove(), 1500);
     }
 
     //NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR.
@@ -564,6 +590,7 @@ class ExplorerGame {
         this.wrongAttempts = 0;   // reset erros
         
         clearInterval(this.timerInterval);
+        if(this.timePenaltyInterval) clearInterval(this.timePenaltyInterval);
         
         document.getElementById('startBtn').disabled = false;
         const hintBtn = document.getElementById('hintBtn');
@@ -735,6 +762,29 @@ class ExplorerGame {
             .replace(/>/g, '&gt;');
     }
     // ====== Leaderboard helpers (novos) ======
+
+    checkDefeat() {
+    // Se chegou a 0 durante a partida e ainda não terminou, perde o jogo
+    if (this.gameStarted && !this.gameEnded && this.score <= 0) {
+        this.gameLost();
+    }
+    }
+
+    gameLost() {
+    this.gameEnded = true;
+    this.gameStarted = false;
+    clearInterval(this.timerInterval);
+    if (this.timePenaltyInterval) clearInterval(this.timePenaltyInterval);
+
+    // Exibe tela de "perdeu"
+    const finalStats = document.getElementById('finalStats');
+    finalStats.innerHTML = `
+        <p style="font-size:22px;color:#b71c1c;"><strong>Você perdeu o jogo!</strong></p>
+        <p><strong>Pontuação:</strong> ${this.score}</p>
+        <p><strong>Tentativas:</strong> ${this.attempts} (✔ ${this.correctAttempts} / ❌ ${this.wrongAttempts})</p>
+    `;
+    document.getElementById('gameOver').style.display = 'flex';
+    }
 }
 
     // Inicializar o jogo quando a página carregar
