@@ -192,6 +192,11 @@ class ExplorerGame {
             const rows = await ipcRenderer.invoke('ler-registros');
             if (!Array.isArray(rows)) return;
 
+            this.leaderboard = [];
+            try {localStorage.removeItem(this.leaderboardKey);} catch(_) {}
+
+            rows.forEach(r => this.leaderboard.push(r));
+
             // rows devem vir como objetos: { score, timeSeconds, timeStr, name, school }
             rows.forEach(r => {
                 // evita duplicar: só adiciona se ainda não existir entrada exatamente igual
@@ -210,8 +215,10 @@ class ExplorerGame {
                 return a.timeSeconds - b.timeSeconds;
             });
             if (this.leaderboard.length > 50) this.leaderboard.length = 50;
+
             this.saveLeaderboard();
             this.renderLeaderboard();
+
         } catch (err) {
             console.error('Falha ao importar CSV:', err);
         }
@@ -287,12 +294,15 @@ class ExplorerGame {
         this.score = 1000;
         this.attempts = 0;
         this.hintUsed = false;
+        this.hintCount = 0;
         this.foundTargets.clear();
         this.correctAttempts = 0;
         this.wrongAttempts = 0;
         
         document.getElementById('startBtn').disabled = true;
-        document.getElementById('hintBtn').disabled = false;
+        const hintBtn = document.getElementById('hintBtn');
+        hintBtn.disabled = false;
+        hintBtn.textContent = `Dica ${this.hintCount}/3`;
         
         this.startTimer();
         this.updateDisplay();
@@ -459,16 +469,22 @@ class ExplorerGame {
     //NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR.
     showHint() {
         if (!this.gameStarted || this.gameEnded) return;
+
+        const hintBtn = document.getElementById('hintBtn');
+
         if(this.hintCount >= 3) {
+            hintBtn.textContent = `Dica 3/3`;
             this.showMessage('💡 Você já usou todas as dicas disponíveis!', 3000);
             return;
         }
 
         this.hintCount++;
-        const container = document.getElementById('gameContainer');
-
         this.hintUsed = true;
-        document.getElementById('hintBtn').disabled = true;
+
+        hintBtn.textContent = `Dica ${this.hintCount}/3`;
+        hintBtn.disabled = true;
+
+        const container = document.getElementById('gameContainer');
         
         // Mostrar dica para todos os alvos não encontrados
         this.allTargets.forEach(target => {
@@ -479,7 +495,6 @@ class ExplorerGame {
                 hint.style.top = (target.y + target.height/2 - 6) + '%';
                 hint.style.width = '8%';
                 hint.style.height = '12%';
-                
                 container.appendChild(hint);
                 setTimeout(() => hint.remove(), 2000);
             }
@@ -487,12 +502,15 @@ class ExplorerGame {
         
         this.showMessage('💡 Olhe para as áreas circuladas em amarelo!', 2000);
 
-        const hintBtn = document.getElementById('hintBtn');
-        hintBtn.disabled = true;
         setTimeout(() => {
-            if(this.hintCount < 3) hintBtn.disabled = false;
-        }, 2000);
-    }
+            if(this.hintCount < 3 && this.gameStarted && !this.gameEnded){ 
+                hintBtn.disabled = false;
+            }
+        else{
+            hintBtn.textContent = `Dica 3/3`;
+        }
+    }, 2000);
+}
 
     showMessage(text, duration) {
         const message = document.createElement('div');
@@ -539,6 +557,7 @@ class ExplorerGame {
         this.startTime = null;
         this.score = 1000;
         this.attempts = 0;
+        this.hintCount = 0;
         this.hintUsed = false;
         this.foundTargets.clear();
         this.correctAttempts = 0; // reset acertos
@@ -547,7 +566,9 @@ class ExplorerGame {
         clearInterval(this.timerInterval);
         
         document.getElementById('startBtn').disabled = false;
-        document.getElementById('hintBtn').disabled = true;
+        const hintBtn = document.getElementById('hintBtn');
+        hintBtn.disabled = true;
+        hintBtn.textContent = `Dica 0/3`;
         document.getElementById('gameOver').style.display = 'none';
         document.getElementById('timer').textContent = '00:00';
         
@@ -671,7 +692,6 @@ class ExplorerGame {
             return a.timeSeconds - b.timeSeconds;                     // asc por tempo
         });
 
-        // (Opcional) manter só top 50 para não crescer demais
         if (this.leaderboard.length > 50) this.leaderboard.length = 50;
 
         this.saveLeaderboard();
