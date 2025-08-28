@@ -13,8 +13,14 @@ class ExplorerGame {
         this.hintCount = 0;
         this.hintUsed = false;
         this.foundTargets = new Set(); // Para rastrear quais alvos foram encontrados
-        this.correctAttempts = 0;
-        this.wrongAttempts = 0;
+        this.correctAttempts = 0; 
+        this.wrongAttempts = 0; 
+
+        // Configurações do Leaderboard
+        this.leaderboardKey = 'insetos_leaderboard_v1';
+        this.leaderboard = this.loadLeaderboard();
+        this.initLeaderboardUI();
+        this.renderLeaderboard();
         
         // Primeira área clicável (teste)
         this.targetArea1 = {
@@ -178,6 +184,37 @@ class ExplorerGame {
                            this.targetArea17];
 
         this.initializeGame();
+    }
+
+    async importFromCSV() {
+        try {
+            // pede ao processo principal para ler e parsear o CSV
+            const rows = await ipcRenderer.invoke('ler-registros');
+            if (!Array.isArray(rows)) return;
+
+            // rows devem vir como objetos: { score, timeSeconds, timeStr, name, school }
+            rows.forEach(r => {
+                // evita duplicar: só adiciona se ainda não existir entrada exatamente igual
+                const exists = this.leaderboard.some(x =>
+                    x.score === r.score &&
+                    x.timeSeconds === r.timeSeconds &&
+                    x.name === r.name &&
+                    x.school === r.school
+                );
+                if (!exists) this.leaderboard.push(r);
+            });
+
+            // ordena e salva 
+            this.leaderboard.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.timeSeconds - b.timeSeconds;
+            });
+            if (this.leaderboard.length > 50) this.leaderboard.length = 50;
+            this.saveLeaderboard();
+            this.renderLeaderboard();
+        } catch (err) {
+            console.error('Falha ao importar CSV:', err);
+        }
     }
 
     initializeGame() {
@@ -345,10 +382,12 @@ class ExplorerGame {
         const etapa = document.getElementById('schoolStage').value.trim();
         const pontuacao = this.score; // Pontuação final do jogo
 
+        // Tempo total em mm:ss
         const elapsed = Date.now() - this.startTime;
         const minutes = Math.floor(elapsed / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         const tempoTotal = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        const tempoSegundos = Math.floor(elapsed / 1000);
 
         ipcRenderer.send('salvar-registro', {
             nome,
@@ -361,6 +400,17 @@ class ExplorerGame {
             erros: this.wrongAttempts,
             tempo: tempoTotal
         });
+
+        // ====== Leaderboard (novo) ======
+        this.updateLeaderboard({
+            score: pontuacao,
+            timeSeconds: tempoSegundos,
+            timeStr: tempoTotal,
+            name: nome || 'Anônimo',
+            school: escola || '-'
+        });
+        this.renderLeaderboard();
+        // ====== Leaderboard (novo) ======
 
         this.showGameOver();
     }
@@ -409,7 +459,7 @@ class ExplorerGame {
     //NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR.
     showHint() {
         if (!this.gameStarted || this.gameEnded) return;
-        if (this.hintCount >= 3) {
+        if(this.hintCount >= 3) {
             this.showMessage('💡 Você já usou todas as dicas disponíveis!', 3000);
             return;
         }
@@ -474,7 +524,7 @@ class ExplorerGame {
         const finalStats = document.getElementById('finalStats');
         finalStats.innerHTML = `
             <p><strong>Tempo:</strong> ${minutes}:${seconds.toString().padStart(2, '0')}</p>
-            <p><strong>Tentativas:</strong> ${this.attempts}</p>
+            <p><strong>Tentativas Totais:</strong> ${this.attempts}</p>
             <p><strong>Animais Encontrados:</strong> ${this.foundTargets.size}/${this.allTargets.length}</p>
             <p><strong>Pontuação Final:</strong> ${this.score}</p>
             ${this.hintUsed ? '<p style="color: #ff9800;">Dica utilizada</p>' : ''}
@@ -491,9 +541,9 @@ class ExplorerGame {
         this.attempts = 0;
         this.hintUsed = false;
         this.foundTargets.clear();
-        this.correctAttempts = 0;
-        this.wrongAttempts = 0;
-
+        this.correctAttempts = 0; // reset acertos
+        this.wrongAttempts = 0;   // reset erros
+        
         clearInterval(this.timerInterval);
         
         document.getElementById('startBtn').disabled = false;
@@ -529,12 +579,149 @@ class ExplorerGame {
     knowMore() {
         document.getElementById('animalInfoPopup').style.display = 'flex';
     }
+
+    initLeaderboardUI() {
+        const panel = document.createElement('div');
+        panel.id = 'leaderboardPanel';
+        panel.style.cssText = `
+            margin-top: 18px; 
+            width: 100%; 
+            max-width: 720px; 
+            background: rgba(255,255,255,0.95); 
+            border-radius: 16px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            overflow: hidden;
+        `;
+
+        const header = document.createElement('div');
+        header.textContent = '🏆 Ranking';
+        header.style.cssText = `
+            padding: 12px 16px; 
+            font-weight: 700; 
+            color: #2c5f2d; 
+            border-bottom: 1px solid #e9e9e9;
+        `;
+
+        const tableWrap = document.createElement('div');
+        tableWrap.id = 'leaderboardWrap';
+        tableWrap.style.cssText = `max-height: 380px; overflow:auto;`;
+
+        const table = document.createElement('table');
+        table.id = 'leaderboardTable';
+        table.style.cssText = `
+            width: 100%; 
+            border-collapse: collapse; 
+            font-family: Arial, sans-serif;
+        `;
+
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr style="background:#f6f8f6;">
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e9e9e9;">#</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e9e9e9;">Pontuação</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e9e9e9;">Tempo</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e9e9e9;">Nome</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid #e9e9e9;">Instituição</th>
+            </tr>
+        `;
+
+        const tbody = document.createElement('tbody');
+        tbody.id = 'leaderboardBody';
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableWrap.appendChild(table);
+        panel.appendChild(header);
+        panel.appendChild(tableWrap);
+
+        // Insere abaixo dos controles do jogo (ou no fim da página, se não achar)
+        const controls = document.querySelector('.controls');
+        if (controls && controls.parentNode) {
+            controls.parentNode.insertBefore(panel, controls.nextSibling);
+        } else {
+            document.body.appendChild(panel);
+        }
+    }
+
+    loadLeaderboard() {
+        try {
+            const raw = localStorage.getItem(this.leaderboardKey);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+            return [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    saveLeaderboard() {
+        try {
+            localStorage.setItem(this.leaderboardKey, JSON.stringify(this.leaderboard));
+        } catch (_) {}
+    }
+
+    updateLeaderboard(entry) {
+        // entry: {score, timeSeconds, timeStr, name, school}
+        this.leaderboard.push(entry);
+
+        // Ordenação: maior pontuação primeiro, em empate menor tempo primeiro
+        this.leaderboard.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;        // desc por score
+            return a.timeSeconds - b.timeSeconds;                     // asc por tempo
+        });
+
+        // (Opcional) manter só top 50 para não crescer demais
+        if (this.leaderboard.length > 50) this.leaderboard.length = 50;
+
+        this.saveLeaderboard();
+    }
+
+    renderLeaderboard() {
+        const tbody = document.getElementById('leaderboardBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        const top = this.leaderboard.slice(0, 10); // mostrar top 10
+        top.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">${idx + 1}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-weight:700;color:#2c5f2d;">${row.score}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">${row.timeStr}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">${this.escape(row.name)}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">${this.escape(row.school)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        if (top.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td colspan="5" style="padding:14px 12px;text-align:center;color:#777;">
+                    Ainda não há registros no ranking. Jogue para aparecer aqui!
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    escape(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+    // ====== Leaderboard helpers (novos) ======
 }
 
     // Inicializar o jogo quando a página carregar
     let game;
     window.addEventListener('DOMContentLoaded', () => {
         game = new ExplorerGame();
+        game.importFromCSV();
 
         fetch('DicSchool.json')
         .then(response => response.json())
