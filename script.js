@@ -13,6 +13,8 @@ class ExplorerGame {
         this.hintCount = 0;
         this.hintUsed = false;
         this.foundTargets = new Set(); // Para rastrear quais alvos foram encontrados
+        this.correctAttempts = 0;
+        this.wrongAttempts = 0;
         
         // Primeira área clicável (teste)
         this.targetArea1 = {
@@ -249,6 +251,8 @@ class ExplorerGame {
         this.attempts = 0;
         this.hintUsed = false;
         this.foundTargets.clear();
+        this.correctAttempts = 0;
+        this.wrongAttempts = 0;
         
         document.getElementById('startBtn').disabled = true;
         document.getElementById('hintBtn').disabled = false;
@@ -291,6 +295,7 @@ class ExplorerGame {
         }
         
         this.attempts++;
+        this.correctAttempts++;
         this.foundTargets.add(target.id);
         
         // Mostrar efeito de sucesso para este alvo específico
@@ -315,6 +320,7 @@ class ExplorerGame {
         if (isTargetClick) return;
         
         this.attempts++;
+        this.wrongAttempts++;
         this.score = Math.max(50, this.score - 25);
         this.updateDisplay();
         
@@ -339,12 +345,21 @@ class ExplorerGame {
         const etapa = document.getElementById('schoolStage').value.trim();
         const pontuacao = this.score; // Pontuação final do jogo
 
+        const elapsed = Date.now() - this.startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        const tempoTotal = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
         ipcRenderer.send('salvar-registro', {
             nome,
             idade,
             escola,
             etapa,
-            pontuacao
+            pontuacao,
+            tentativas: this.attempts,
+            acertos: this.correctAttempts,
+            erros: this.wrongAttempts,
+            tempo: tempoTotal
         });
 
         this.showGameOver();
@@ -364,7 +379,7 @@ class ExplorerGame {
         
         //DIMINUIR TEMPO DE EXPOSIÇÃO
         container.appendChild(indicator);
-        setTimeout(() => indicator.remove(), 3000);
+        setTimeout(() => indicator.remove(), 2000);
         
         // Marcar visualmente o alvo como encontrado
         const targetElement = document.getElementById(target.id);
@@ -394,13 +409,12 @@ class ExplorerGame {
     //NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR.
     showHint() {
         if (!this.gameStarted || this.gameEnded) return;
-        if(this.hintCount >= 3) {
+        if (this.hintCount >= 3) {
             this.showMessage('💡 Você já usou todas as dicas disponíveis!', 3000);
             return;
         }
 
         this.hintCount++;
-
         const container = document.getElementById('gameContainer');
 
         this.hintUsed = true;
@@ -477,7 +491,9 @@ class ExplorerGame {
         this.attempts = 0;
         this.hintUsed = false;
         this.foundTargets.clear();
-        
+        this.correctAttempts = 0;
+        this.wrongAttempts = 0;
+
         clearInterval(this.timerInterval);
         
         document.getElementById('startBtn').disabled = false;
