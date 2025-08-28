@@ -10,6 +10,7 @@ class ExplorerGame {
         this.score = 1000;
         this.attempts = 0;
         this.timerInterval = null;
+        this.hintCount = 0;
         this.hintUsed = false;
         this.foundTargets = new Set(); // Para rastrear quais alvos foram encontrados
         
@@ -392,12 +393,18 @@ class ExplorerGame {
 
     //NECESSARIO FAZER ALTERAÇÃO PARA DIFICULTAR.
     showHint() {
-        if (this.hintUsed || !this.gameStarted || this.gameEnded) return;
-        
+        if (!this.gameStarted || this.gameEnded) return;
+        if(this.hintCount >= 3) {
+            this.showMessage('💡 Você já usou todas as dicas disponíveis!', 3000);
+            return;
+        }
+
+        this.hintCount++;
+
+        const container = document.getElementById('gameContainer');
+
         this.hintUsed = true;
         document.getElementById('hintBtn').disabled = true;
-        
-        const container = document.getElementById('gameContainer');
         
         // Mostrar dica para todos os alvos não encontrados
         this.allTargets.forEach(target => {
@@ -410,11 +417,17 @@ class ExplorerGame {
                 hint.style.height = '12%';
                 
                 container.appendChild(hint);
-                setTimeout(() => hint.remove(), 4000);
+                setTimeout(() => hint.remove(), 2000);
             }
         });
         
-        this.showMessage('💡 Olha para as áreas circuladas em amarelo!', 4000);
+        this.showMessage('💡 Olhe para as áreas circuladas em amarelo!', 2000);
+
+        const hintBtn = document.getElementById('hintBtn');
+        hintBtn.disabled = true;
+        setTimeout(() => {
+            if(this.hintCount < 3) hintBtn.disabled = false;
+        }, 2000);
     }
 
     showMessage(text, duration) {
@@ -553,4 +566,3 @@ class ExplorerGame {
     document.querySelector('.register-overlay').style.display = 'none';
     document.getElementById('startBtn').disabled = false;
     });
-
