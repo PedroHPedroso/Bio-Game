@@ -434,7 +434,8 @@ class ExplorerGame {
             tentativas: this.attempts,
             acertos: this.correctAttempts,
             erros: this.wrongAttempts,
-            tempo: tempoTotal
+            tempo: tempoTotal,
+            resultado: 'GANHOU'
         });
 
         // ====== Leaderboard (novo) ======
@@ -710,7 +711,6 @@ class ExplorerGame {
     }
 
     updateLeaderboard(entry) {
-        // entry: {score, timeSeconds, timeStr, name, school}
         this.leaderboard.push(entry);
 
         // Ordenação: maior pontuação primeiro, em empate menor tempo primeiro
@@ -775,6 +775,31 @@ class ExplorerGame {
     this.gameStarted = false;
     clearInterval(this.timerInterval);
     if (this.timePenaltyInterval) clearInterval(this.timePenaltyInterval);
+
+    if (this.attempts > 0 || this.correctAttempts > 0 || this.wrongAttempts > 0) {
+    const elapsed = Date.now() - this.startTime;
+    const minutes = Math.floor(elapsed / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
+    const tempoTotal = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    const nome = document.getElementById('name').value.trim();
+    const idade = parseInt(document.getElementById('age').value.trim(), 10);
+    const escola = document.getElementById('school').value.trim();
+    const etapa = document.getElementById('schoolStage').value.trim();
+
+    ipcRenderer.send('salvar-registro', {
+      nome,
+      idade,
+      escola,
+      etapa,
+      pontuacao: this.score,
+      tentativas: this.attempts,
+      acertos: this.correctAttempts,
+      erros: this.wrongAttempts,
+      tempo: tempoTotal,
+      resultado: 'PERDEU' // ✅ novo campo
+    });
+  }
 
     // Exibe tela de "perdeu"
     const finalStats = document.getElementById('finalStats');
